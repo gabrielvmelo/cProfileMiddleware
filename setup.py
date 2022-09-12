@@ -12,22 +12,12 @@ setup(
     description="Profile library",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    # url="https://medium-multiply.readthedocs.io/",
+    url="https://github.com/Jijun/fastapi-cprofile",
     author="Gabriel Melo",
     author_email="gabriel.melo@bureauworks.com",
     license="MIT",
-    classifiers=[
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Operating System :: OS Independent"
-    ],
-    packages=["medium_multiply"],
+    classifiers=["cprofile", "fastapi", "middleware"],
+    packages=["cProfileMiddleware"],
     include_package_data=True,
-    install_requires=["numpy"]
+    install_requires=["fastapi"]
 )
