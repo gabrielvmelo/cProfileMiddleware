@@ -7,6 +7,7 @@ from traceback import print_exc
 class ProfilerMiddleware:
     def __init__(
         self, app: ASGIApp, 
+        enable : bool = False,
         sort_by : str = 'cumulative',
         print_each_request : bool = False,
         filename : str = "/tmp/profile_output.stats",
@@ -16,6 +17,7 @@ class ProfilerMiddleware:
         data_EP : str = "/profilling/data") -> None:
         
         self.app = app
+        self.enable = enable
         self._sort_by = sort_by
         self._print_each_request = print_each_request
         self._filename = filename
@@ -39,34 +41,36 @@ class ProfilerMiddleware:
         status_code = 500
 
         if path == self._activate_EP:
-            self._profiler.enable()
+            self.enable = True
             print("Profilling STARTED")
         elif path == self._deactivate_EP:
-            self._profiler.disable()
+            self.enable = False
             print("Profilling STOPPED")
-        elif path == self._data_EP:
-            self._profiler.enable()
-            s = io.StringIO()
-            ps = pstats.Stats(self._profiler, stream=s).sort_stats(self._sort_by)
-            if self._strip_dirs:
-                ps.strip_dirs()
-            ps.print_stats()
-            with open(self._filename, "w") as arq:
-                r = s.getvalue()
-                arq.write(r)
-            print("Profile Data SAVED")
-            self._profiler.disable()
-        
-        async def wrapped_send(message: Message) -> None:
-            if message['type'] == 'http.response.start':
-                nonlocal status_code
-                status_code = message['status']
-            await send(message)
+        else:
+            if self.enable:
+                self._profiler.enable()
+            
+            async def wrapped_send(message: Message) -> None:
+                if message['type'] == 'http.response.start':
+                    nonlocal status_code
+                    status_code = message['status']
+                await send(message)
 
-        try:
-            await self.app(scope, receive, wrapped_send)
-        except:
-            print_exc()
-        finally:
-            end = time.perf_counter()
-            print(f"Method: {method} ", f"Path: {path} ", f"Duration: {end - begin} ", f"Status: {status_code}")
+            try:
+                await self.app(scope, receive, wrapped_send)
+            except:
+                print_exc()
+            finally:
+                if self.enable:
+                    self._profiler.disable()
+                    
+                    s = io.StringIO()
+                    ps = pstats.Stats(self._profiler, stream=s).sort_stats(self._sort_by)
+                    if self._strip_dirs:
+                        ps.strip_dirs()
+                    ps.print_stats()
+                    
+                    with open(self._filename, 'a') as arq:
+                        print(s.getvalue(), file=arq)
+                end = time.perf_counter()
+                print(f"Method: {method} ", f"Path: {path} ", f"Duration: {end - begin} ", f"Status: {status_code}")
