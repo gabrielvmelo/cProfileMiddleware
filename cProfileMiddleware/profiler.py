@@ -45,7 +45,7 @@ class ProfilerMiddleware:
             self._profiler.disable()
             print("Profilling STOPPED")
         elif path == self._data_EP:
-            self._profiler.disable()
+            self._profiler.enable()
             s = io.StringIO()
             ps = pstats.Stats(self._profiler, stream=s).sort_stats(self._sort_by)
             if self._strip_dirs:
@@ -55,7 +55,7 @@ class ProfilerMiddleware:
                 r = s.getvalue()
                 arq.write(r)
             print("Profile Data SAVED")
-            self._profiler.enable()
+            self._profiler.disable()
         
         async def wrapped_send(message: Message) -> None:
             if message['type'] == 'http.response.start':
