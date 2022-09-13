@@ -40,37 +40,36 @@ class ProfilerMiddleware:
         begin = time.perf_counter()
         status_code = 500
 
+        async def wrapped_send(message: Message) -> None:
+            if message['type'] == 'http.response.start':
+                nonlocal status_code
+                status_code = message['status']
+            await send(message)
+
         if path == self._activate_EP:
             self.enable = True
             print("Profilling STARTED")
         elif path == self._deactivate_EP:
             self.enable = False
             print("Profilling STOPPED")
-        else:
+        
+        if self.enable:
+            self._profiler.enable()
+        try:
+            await self.app(scope, receive, wrapped_send)
+        except:
+            print_exc()
+        finally:
             if self.enable:
-                self._profiler.enable()
-            
-            async def wrapped_send(message: Message) -> None:
-                if message['type'] == 'http.response.start':
-                    nonlocal status_code
-                    status_code = message['status']
-                await send(message)
-
-            try:
-                await self.app(scope, receive, wrapped_send)
-            except:
-                print_exc()
-            finally:
-                if self.enable:
-                    self._profiler.disable()
-                    
-                    s = io.StringIO()
-                    ps = pstats.Stats(self._profiler, stream=s).sort_stats(self._sort_by)
-                    if self._strip_dirs:
-                        ps.strip_dirs()
-                    ps.print_stats()
-                    
-                    with open(self._filename, 'a') as arq:
-                        print(s.getvalue(), file=arq)
-                end = time.perf_counter()
-                print(f"Method: {method} ", f"Path: {path} ", f"Duration: {end - begin} ", f"Status: {status_code}")
+                self._profiler.disable()
+                
+                s = io.StringIO()
+                ps = pstats.Stats(self._profiler, stream=s).sort_stats(self._sort_by)
+                if self._strip_dirs:
+                    ps.strip_dirs()
+                ps.print_stats()
+                
+                with open(self._filename, 'a') as arq:
+                    print(s.getvalue(), file=arq)
+            end = time.perf_counter()
+            print(f"Method: {method} ", f"Path: {path} ", f"Duration: {end - begin} ", f"Status: {status_code}")
