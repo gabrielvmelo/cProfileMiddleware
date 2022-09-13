@@ -51,6 +51,8 @@ class ProfilerMiddleware:
             print("Profilling STARTED")
         elif path == self._deactivate_EP:
             self.enable = False
+            with open(self._filename, "w") as arq:
+                arq.write("")
             print("Profilling STOPPED")
         
         if self.enable:
