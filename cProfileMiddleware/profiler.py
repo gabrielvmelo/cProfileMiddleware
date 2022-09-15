@@ -39,6 +39,7 @@ class ProfilerMiddleware:
         path = request.url.path
         begin = time.perf_counter()
         status_code = 500
+        print(request.client)
 
         async def wrapped_send(message: Message) -> None:
             if message['type'] == 'http.response.start':
