@@ -70,8 +70,9 @@ class ProfilerMiddleware:
                 if self._strip_dirs:
                     ps.strip_dirs()
                 ps.print_stats()
-                
+                r = s.getvalue()
                 with open(self._filename, 'a') as arq:
-                    print(s.getvalue(), file=arq)
+                    print(r, file=arq)
+                print(r)
             end = time.perf_counter()
             print(f"Method: {method} ", f"Path: {path} ", f"Duration: {end - begin} ", f"Status: {status_code}")
