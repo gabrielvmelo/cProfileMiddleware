@@ -77,9 +77,10 @@ class ProfilerMiddleware:
                     ps.strip_dirs()
                 ps.print_stats()
                 r = s.getvalue()
-                with self.lock:
-                    with open(self._filename, 'a') as arq:
-                        print(r, file=arq)
+                self.lock.acquire()
+                with open(self._filename, 'a') as arq:
+                    print(r, file=arq)
+                self.lock.release()
                 print(r)
             end = time.perf_counter()
             print(f"Method: {method} ", f"Path: {path} ", f"Duration: {end - begin} ", f"Status: {status_code}")
