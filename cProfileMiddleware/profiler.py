@@ -25,7 +25,7 @@ class ProfilerMiddleware:
         self._activate_EP = activate_EP
         self._deactivate_EP = deactivate_EP
         self._data_EP = data_EP
-        self._profiler = cProfile.Profile()
+        #self._profiler = cProfile.Profile()
 
     
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -56,16 +56,18 @@ class ProfilerMiddleware:
                 arq.write("")
             print("Profilling STOPPED")
         
-        if self.enable:
-            self._profiler.enable()
+        #if self.enable:
+        #    self._profiler.enable()
         try:
+            if self.enable:
+                self._profiler = cProfile.Profile()
+                self._profiler.enable()
             await self.app(scope, receive, wrapped_send)
         except:
             print_exc()
         finally:
             if self.enable:
                 self._profiler.disable()
-                
                 s = io.StringIO()
                 ps = pstats.Stats(self._profiler, stream=s).sort_stats(self._sort_by)
                 if self._strip_dirs:
