@@ -3,10 +3,12 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 import cProfile, pstats, io
 from traceback import print_exc
+from threading import Lock
 
 class ProfilerMiddleware:
     def __init__(
         self, app: ASGIApp, 
+        lock : Lock = None,
         enable : bool = False,
         sort_by : str = 'cumulative',
         print_each_request : bool = False,
@@ -17,6 +19,7 @@ class ProfilerMiddleware:
         data_EP : str = "/profilling/data") -> None:
         
         self.app = app
+        self.lock = lock
         self.enable = enable
         self._sort_by = sort_by
         self._print_each_request = print_each_request
@@ -74,8 +77,9 @@ class ProfilerMiddleware:
                     ps.strip_dirs()
                 ps.print_stats()
                 r = s.getvalue()
-                with open(self._filename, 'a') as arq:
-                    print(r, file=arq)
+                with self.lock:
+                    with open(self._filename, 'a') as arq:
+                        print(r, file=arq)
                 print(r)
             end = time.perf_counter()
             print(f"Method: {method} ", f"Path: {path} ", f"Duration: {end - begin} ", f"Status: {status_code}")
